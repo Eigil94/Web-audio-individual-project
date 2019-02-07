@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Web audio mini project Eigil</title>
+
+</head>
+<body>
+
+<button type="button" id="button1">Play</button>
+
+<button type="button" id="button2">Stop (not used)</button>
+
+<!-- This is the new way of starting an app of Web Audio -->
+<!-- Recommended to use this template for new projects -->
+<script>
+  var context = new (window.AudioContext || window.webkitAudioContext)();
+context = new AudioContext();
+
+//var SampleBuffer;
+
+// function getBuffer() {
+//   return sampleBuffer;
+// }
+
+var mySoundSource = context.createBufferSource();
+loadSound("Harp_High.wav", mySoundSource);
+var myIRbuffer = context.createBuffer(2, context.sampleRate * 3, context.sampleRate);
+loadSound("BatteryBenson.wav", myIRbuffer);
+var reverb = context.createConvolver();
+
+
+
+
+document.querySelector("button").addEventListener('click', function() {
+  reverb.disconnect();
+//var volume = context.createGain();
+//volume.gain.value = 1;
+console.log(1);
+
+
+console.log(mySoundSource.buffer);
+console.log(myIRbuffer.buffer);
+
+
+reverb.buffer = myIRbuffer;
+reverb.loop = true;
+reverb.normalize = true;
+console.log(reverb.buffer);
+console.log(reverb);
+
+mySoundSource.connect(context.destination);
+mySoundSource.connect(reverb);
+reverb.connect(context.destination);
+
+
+mySoundSource.start(0);
+   
+
+    });
+//var sampleBuffer = null;
+// Fix up prefixing
+
+
+function loadSound(url, bufferSource) {
+    var request = new XMLHttpRequest();
+    request.open('GET', url, true);
+    request.responseType = 'arraybuffer';
+    // Decode asynchronously
+    request.onload = function () {
+      context.decodeAudioData(request.response, function(buffer) {
+      bufferSource.buffer = buffer;
+      console.log("success");
+      }, onError);
+    }
+    request.send();
+  }
+function onError(){
+   console.log("The file could not be loaded");
+ }
+
+</script>
+
+
+</body>
+</html>

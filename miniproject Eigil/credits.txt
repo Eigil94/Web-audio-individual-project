@@ -1,0 +1,4 @@
+Sound used:
+BatteryBenson.wav from http://www.echothief.com/battery-benson/
+
+CathedralRoom.wav from http://www.echothief.com/cathedral-room-shasta-lake-caverns/

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Web audio mini project Eigil</title>
+
+</head>
+<style>
+body {
+  background-color: silver;
+  width: 600px;
+  font-family: "Comic Sans MS", cursive, sans-serif;
+}
+
+button {
+  font-size: 300%;
+  font-family: "Comic Sans MS", cursive, sans-serif;
+}
+
+</style>
+<body>
+<h1>The Pointilator sequence synth</h1>
+<canvas id="myCanvas" width="600px" height="400px" style="border:1px solid #000000"></canvas>
+<br><br>
+<button type="button" id="button1">Play</button>
+<button type="button" id="button2">Stop</button>
+<button type="button" id="button3">Reset</button>
+
+<p><strong>Instructions:</strong> Click the canvas to draw note points. The x-axis is time, and the y-axis is pitch. Play the sequence by pressing the "play" button.
+Reset the note points by pressing the "reset" button, and stop any sound playing with the "stop" button.</p>
+
+<!-- This is the new way of starting an app of Web Audio -->
+<!-- Recommended to use this template for new projects -->
+<script>
+  // Global variables
+var context = new (window.AudioContext || window.webkitAudioContext)();
+context = new AudioContext();
+
+const masterGain = context.createGain();
+masterGain.gain.value = 0;
+masterGain.connect(context.destination);
+
+var timerID;
+
+//Sound properties
+const pitchScale = 20000;
+const timeScale = 4; //Length of sequence in seconds
+const noteLength = 0.2; //Length of note in seconds. Should be changed with envelope later_
+const loopingbool = true; // Can be used to loop the sequence, must check if this just creates a while true loop
+var stopper;
+var nextLoopTime;
+const waveform = "triangle";
+var loopStartTime;
+var playedOnce;
+var running;
+
+
+
+//Note events
+let noteEvent = class {
+  constructor(x, y){
+    this.time = x;
+    this.pitch = y;
+  }
+};
+var noteEvents = [];
+
+// Canvas context for drawing visuals
+var c = document.getElementById("myCanvas");
+var ctx = c.getContext("2d");
+
+var height = c.height;
+var width = c.width;
+
+
+//start by initalizing canvas
+resetCanvas();
+
+//Eventlistener for click on Canvas
+c.addEventListener('click', function(event) {
+  let x = event.pageX - c.offsetLeft, y = event.pageY - c.offsetTop;
+                // max number of points?
+  //Draw dots
+  drawDot(x, y);
+// Add note event by click coordinate to array
+noteEvents.push(new noteEvent(x/width, reverseRangeOfCanvasScale(y, 200, 2000)));
+
+//play note in current loop if applicable
+if (!stopper && ((context.currentTime-loopStartTime) <= (x/width*timeScale))) {
+  playTone(new noteEvent(((x/width*timeScale+loopStartTime)-context.currentTime)/timeScale, reverseRangeOfCanvasScale(y, 200, 2000)));
+  console.log("made new note on " + context.currentTime);
+} // else, it is handled on next playthrough by the for loop
+
+//console.log(noteEvents);
+
+    }, false);
+
+
+    // Code to be executed on Play button
+document.querySelector("#button1").addEventListener('click', function() {
+stopper = false;
+console.log("is it running?" + running);
+  nextLoopTime = context.currentTime;
+
+console.log(playedOnce);
+masterGain.gain.linearRampToValueAtTime(1, context.currentTime + 0.1);
+
+scheduler();
+
+});
+
+function scheduler() {
+  running = true;
+playedOnce = false; // to make it work in no looping mode
+while ((nextLoopTime < context.currentTime+0.1) && (!playedOnce || loopingbool) && !stopper) // Keep playing if loop.
+  { 
+    for (event in noteEvents)  // play note events
+      {
+      console.log(noteEvents[event]);
+      playTone(noteEvents[event]);
+      }
+    loopStartTime = context.currentTime;
+    console.log("loop started at " + loopStartTime);
+    nextLoopTime += timeScale;
+    playedOnce = true; 
+    if (!running) {
+      break;
+    }  
+  }
+  timerID = window.setTimeout(scheduler, 100.0);
+}
+
+// Code to executed on Stop button
+document.querySelector("#button2").addEventListener('click', function() {
+  stopSound();
+});
+
+
+    // Code to be executed on Reset button
+document.querySelector("#button3").addEventListener('click', function() {
+
+resetCanvas();
+
+});
+
+function drawDot(x, y) {
+  console.log(x, y);
+  ctx.beginPath();
+ctx.arc(x, y, 10, 0, 2 * Math.PI);
+ctx.stroke();
+}
+
+function playTone(event) {
+  {
+  let oscil = context.createOscillator();
+  oscil.type = waveform;
+  console.log(event.pitch);
+  oscil.frequency.value = Math.pow(event.pitch, 2) * pitchScale;
+  oscil.connect(masterGain);
+  oscil.start(context.currentTime + event.time*timeScale);
+  oscil.stop(context.currentTime + event.time*timeScale + noteLength);
+  }
+}
+
+function resetCanvas() {
+  stopSound();
+  fillBackground();
+  noteEvents = [];
+  loopCounter = 0;
+}
+
+// Fill canvas with a gradient background
+function fillBackground() {
+var grd = ctx.createLinearGradient(0, 0, 0, width*0.6);
+grd.addColorStop(0, "red");
+grd.addColorStop(1, "silver");
+ctx.fillStyle = grd;
+ctx.fillRect(0, 0, width, height);
+}
+
+function reverseRangeOfCanvasScale(y, min, max) {
+  let reverseRange = (height*(y-max))/(min-max);
+  return reverseRange/max;
+}
+
+function stopSound() {
+  masterGain.gain.linearRampToValueAtTime(0, context.currentTime + 0.2);
+  stopper = true;
+}
+
+</script>
+
+
+</body>
+</html>
