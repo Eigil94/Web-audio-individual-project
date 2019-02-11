@@ -2,6 +2,8 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="keywords" content="music, technology, web audio api, MCT">
+        <meta name="description" content="Individual project by Eigil Aandahl for audio programming workshop at MCT 2019">
   <title>Web audio mini project Eigil</title>
   <script src="NexusUI.js"></script>
 </head>
@@ -31,13 +33,15 @@ div {display: block;}
 }
 
 </style>
+
+
 <body>
-<h1>The Pointilator sequence synth 2.0</h1>
-<canvas id="myCanvas" width="600px" height="400px" style="border:1px solid #000000"></canvas>
-<br><br>
-<button type="button" id="button1">Play</button>
-<button type="button" id="button2">Stop</button>
-<button type="button" id="button3">Reset</button>
+  <h1>The Pointilator sequence synth 2.0</h1>
+  <canvas id="myCanvas" width="600px" height="400px" style="border:1px solid #000000"></canvas>
+  <br><br>
+  <button type="button" id="button1">Play</button>
+  <button type="button" id="button2">Stop</button>
+  <button type="button" id="button3">Reset</button>
 
 <div>
     <p>Timescale</p><div id="slider1"></div>
@@ -51,8 +55,9 @@ Reset the note points by pressing the "reset" button, and stop any sound playing
 </div>
 <!-- This is the new way of starting an app of Web Audio -->
 <!-- Recommended to use this template for new projects -->
+
 <script>
-  // Global variables
+  // Global variables and audio context
 var context = new (window.AudioContext || window.webkitAudioContext)();
 context = new AudioContext();
 
@@ -61,7 +66,7 @@ masterGain.gain.value = 0;
 masterGain.connect(context.destination);
 
 var timerID;
-
+// #########################################################
 
 //Nexus GUI
 var slider1 = new Nexus.Slider('#slider1',{
@@ -97,12 +102,12 @@ var envelope = new Nexus.Multislider('#envelope',{
  'step': 0,
  'values': [0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7]
 })
-
+// #####################################################
 
 //Sound properties
 const pitchScale = 20000;
 var timeScale = 5; //Length of sequence in seconds
-var noteLength = 0.3; //Length of note in seconds. Should be changed with envelope later_
+var noteLength = 0.3; //Length of note in seconds.
 const loopingbool = true; // Can be used to loop the sequence, must check if this just creates a while true loop
 var stopper;
 var nextLoopTime;
@@ -112,6 +117,8 @@ var playedOnce;
 var running;
 var envarray = [0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7];
 var mainVolume = 1;
+// ###########################################################
+
 //Nexus GUI event listener
 slider1.on('change',function(v) {
   console.log(v);
@@ -131,7 +138,7 @@ envelope.on('change',function(v) {
   console.log(v);
   envarray[v.index] = v.value;
 })
-
+// ################################
 
 //Note events
 let noteEvent = class {
@@ -145,7 +152,6 @@ var noteEvents = [];
 // Canvas context for drawing visuals
 var c = document.getElementById("myCanvas");
 var ctx = c.getContext("2d");
-
 var height = c.height;
 var width = c.width;
 
@@ -186,6 +192,7 @@ scheduler();
 
 });
 
+// Looping scheduler function
 function scheduler() {
 playedOnce = false; // to make it work in no looping mode
 while ((nextLoopTime < context.currentTime+0.1) && (!playedOnce || loopingbool) && !stopper) // Keep playing if loop.
@@ -218,6 +225,8 @@ resetCanvas();
 
 });
 
+
+// Draws a circle on the canvas according to coordinates
 function drawDot(x, y) {
   console.log(x, y);
   ctx.beginPath();
@@ -225,6 +234,7 @@ ctx.arc(x, y, 10, 0, 2 * Math.PI);
 ctx.stroke();
 }
 
+// Creates an oscillator that plays according to time after loop has started
 function playTone(event) {
   {
   let oscil = context.createOscillator();
@@ -239,6 +249,7 @@ function playTone(event) {
   }
 }
 
+// Resets canvas, empties note event array and stops sound
 function resetCanvas() {
   stopSound();
   fillBackground();
@@ -255,11 +266,13 @@ ctx.fillStyle = grd;
 ctx.fillRect(0, 0, width, height);
 }
 
+// Gets the reverse range of the canvas height to get vertical note information from low to high
 function reverseRangeOfCanvasScale(y, min, max) {
   let reverseRange = (height*(y-max))/(min-max);
   return reverseRange/max;
 }
 
+// Stops sound by muting masterGain audio node
 function stopSound() {
   masterGain.gain.linearRampToValueAtTime(0, context.currentTime + 0.2);
   stopper = true;
