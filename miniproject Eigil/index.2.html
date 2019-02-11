@@ -3,32 +3,52 @@
 <head>
   <meta charset="utf-8">
   <title>Web audio mini project Eigil</title>
-
+  <script src="NexusUI.js"></script>
 </head>
 <style>
 body {
-  background-color: silver;
+  background-color: #2c2f33;
   width: 600px;
-  font-family: "Comic Sans MS", cursive, sans-serif;
+  font-family: "Helvetica", cursive, sans-serif;
+  color: #dc322f;
 }
 
 button {
-  font-size: 300%;
-  font-family: "Comic Sans MS", cursive, sans-serif;
+  background-color: #99aab5;
+  font-size: 250%;
+  font-family: "Helvetica", cursive, sans-serif;
+  margin-bottom: 10px;
+}
+
+#instructions {display:block; position: relative; margin-bottom: 50px; top:-100px;}
+
+div {display: block;}
+
+#envelope {
+  position: relative;
+  margin-left: 200px;
+  bottom: 200px;
 }
 
 </style>
 <body>
-<h1>The Pointilator sequence synth new!</h1>
+<h1>The Pointilator sequence synth 2.0</h1>
 <canvas id="myCanvas" width="600px" height="400px" style="border:1px solid #000000"></canvas>
 <br><br>
 <button type="button" id="button1">Play</button>
 <button type="button" id="button2">Stop</button>
 <button type="button" id="button3">Reset</button>
 
-<p><strong>Instructions:</strong> Click the canvas to draw note points. The x-axis is time, and the y-axis is pitch. Play the sequence by pressing the "play" button.
-Reset the note points by pressing the "reset" button, and stop any sound playing with the "stop" button.</p>
+<div>
+    <p>Timescale</p><div id="slider1"></div>
+    <p>Envelope Level</p><div id="slider2"></div>
+    <p>Note Length</p><div id="slider3"></div>
 
+    <div id="envelope"><p>Envelope</p></div>
+
+<p id="instructions"><strong>Instructions:</strong> Click the canvas to draw note points. The x-axis is time, and the y-axis is pitch. Play the sequence by pressing the "play" button.
+Reset the note points by pressing the "reset" button, and stop any sound playing with the "stop" button.</p>
+</div>
 <!-- This is the new way of starting an app of Web Audio -->
 <!-- Recommended to use this template for new projects -->
 <script>
@@ -42,10 +62,47 @@ masterGain.connect(context.destination);
 
 var timerID;
 
+
+//Nexus GUI
+var slider1 = new Nexus.Slider('#slider1',{
+    'size': [120,20],
+    'mode': 'relative',  // 'relative' or 'absolute'
+    'min': 1,
+    'max': 10,
+    'step': 0,
+    'value': 5
+})
+var slider2 = new Nexus.Slider('#slider2',{
+    'size': [120,20],
+    'mode': 'relative',  // 'relative' or 'absolute'
+    'min': 0.001,
+    'max': 1,
+    'step': 0,
+    'value': 0.3
+})
+var slider3 = new Nexus.Slider('#slider3',{
+    'size': [120,20],
+    'mode': 'relative',  // 'relative' or 'absolute'
+    'min': 0.05,
+    'max': 1,
+    'step': 0,
+    'value': 0.2
+})
+
+var envelope = new Nexus.Multislider('#envelope',{
+  'size': [200,100],
+ 'numberOfSliders': 10,
+ 'min': 0,
+ 'max': 1,
+ 'step': 0,
+ 'values': [0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7]
+})
+
+
 //Sound properties
 const pitchScale = 20000;
-const timeScale = 4; //Length of sequence in seconds
-const noteLength = 0.2; //Length of note in seconds. Should be changed with envelope later_
+var timeScale = 5; //Length of sequence in seconds
+var noteLength = 0.3; //Length of note in seconds. Should be changed with envelope later_
 const loopingbool = true; // Can be used to loop the sequence, must check if this just creates a while true loop
 var stopper;
 var nextLoopTime;
@@ -53,7 +110,27 @@ const waveform = "triangle";
 var loopStartTime;
 var playedOnce;
 var running;
+var envarray = [0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7,0.7];
+var mainVolume = 1;
+//Nexus GUI event listener
+slider1.on('change',function(v) {
+  console.log(v);
+  timeScale = v;
+})
 
+slider2.on('change',function(v) {
+  console.log(v);
+  mainVolume = v;
+})
+slider3.on('change',function(v) {
+  console.log(v);
+  noteLength = v;
+})
+
+envelope.on('change',function(v) {
+  console.log(v);
+  envarray[v.index] = v.value;
+})
 
 
 //Note events
@@ -103,18 +180,17 @@ console.log("is it running?" + running);
   nextLoopTime = context.currentTime;
 
 console.log(playedOnce);
-masterGain.gain.linearRampToValueAtTime(1, context.currentTime + 0.1);
+masterGain.gain.linearRampToValueAtTime(mainVolume, context.currentTime + 0.1);
 
 scheduler();
 
 });
 
 function scheduler() {
-  running = true;
 playedOnce = false; // to make it work in no looping mode
 while ((nextLoopTime < context.currentTime+0.1) && (!playedOnce || loopingbool) && !stopper) // Keep playing if loop.
-  { 
-    for (event in noteEvents)  // play note events
+  {    
+for (event in noteEvents)  // play note events
       {
       console.log(noteEvents[event]);
       playTone(noteEvents[event]);
@@ -123,10 +199,9 @@ while ((nextLoopTime < context.currentTime+0.1) && (!playedOnce || loopingbool) 
     console.log("loop started at " + loopStartTime);
     nextLoopTime += timeScale;
     playedOnce = true; 
-    if (!running) {
-      break;
-    }  
-  }
+    running = true;
+    
+    }
   timerID = window.setTimeout(scheduler, 100.0);
 }
 
@@ -154,9 +229,11 @@ function playTone(event) {
   {
   let oscil = context.createOscillator();
   oscil.type = waveform;
-  console.log(event.pitch);
   oscil.frequency.value = Math.pow(event.pitch, 2) * pitchScale;
-  oscil.connect(masterGain);
+  let envelopeGain = context.createGain();
+  oscil.connect(envelopeGain);
+  envelopeGain.connect(masterGain);
+  envelopeGain.gain.setValueCurveAtTime(envarray, context.currentTime + event.time*timeScale, context.currentTime + event.time*timeScale + noteLength);
   oscil.start(context.currentTime + event.time*timeScale);
   oscil.stop(context.currentTime + event.time*timeScale + noteLength);
   }
