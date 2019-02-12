@@ -7,11 +7,11 @@
 </head>
 <body>
 
-<h1>Simple sample player test</h1>
+<h1>Simple sample player test through convolver node</h1>
 
 <button type="button" id="button1">Play</button>
 
-<button type="button" id="button2">Stop (not used)</button>
+<!--<button type="button" id="button2">connect</button> -->
 
 <!-- This is the new way of starting an app of Web Audio -->
 <!-- Recommended to use this template for new projects -->
@@ -19,51 +19,53 @@
   var context = new (window.AudioContext || window.webkitAudioContext)();
 context = new AudioContext();
 
-//var SampleBuffer;
 
-// function getBuffer() {
-//   return sampleBuffer;
-// }
 
 var mySoundSource = context.createBufferSource();
+mySoundSource.loop = true;
 loadSound("sounds/Harp_High.wav", mySoundSource);
-var myIRbuffer = context.createBuffer(2, context.sampleRate * 3, context.sampleRate);
-loadSound("sounds/BatteryBenson.wav", myIRbuffer);
+//var myIRbuffer = {buffer: 0}; // = context.createBuffer(2, context.sampleRate * 3, context.sampleRate);
+
 var reverb = context.createConvolver();
+loadSound("sounds/BatteryBenson.wav", reverb);
+/*
+osc = context.createOscillator();  
+        osc.type = "sawtooth";
+        osc.start();  
 
-
-
-
-document.querySelector("button").addEventListener('click', function() {
-  reverb.disconnect();
-//var volume = context.createGain();
-//volume.gain.value = 1;
-console.log(1);
+*/
+document.querySelector("#button1").addEventListener('click', function() {
 
 
 console.log(mySoundSource.buffer);
-console.log(myIRbuffer.buffer);
+//console.log(myIRbuffer.buffer);
 
 
-reverb.buffer = myIRbuffer;
+//reverb.buffer = myIRbuffer;
 reverb.loop = true;
 reverb.normalize = true;
 console.log(reverb.buffer);
 console.log(reverb);
 
-mySoundSource.connect(context.destination);
+
+
+//mySoundSource.connect(context.destination);
 mySoundSource.connect(reverb);
 reverb.connect(context.destination);
 
 
 mySoundSource.start(0);
-   
+
+});
+  /* 
+document.querySelector("#button2").addEventListener('click', function() {
+
+  osc.connect(reverb);
+reverb.connect(context.destination);
+
 
     });
-//var sampleBuffer = null;
-// Fix up prefixing
-
-
+*/
 function loadSound(url, bufferSource) {
     var request = new XMLHttpRequest();
     request.open('GET', url, true);
