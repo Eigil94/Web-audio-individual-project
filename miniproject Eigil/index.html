@@ -26,9 +26,9 @@ context = new AudioContext();
 // }
 
 var mySoundSource = context.createBufferSource();
-loadSound("Harp_High.wav", mySoundSource);
+loadSound("sounds/Harp_High.wav", mySoundSource);
 var myIRbuffer = context.createBuffer(2, context.sampleRate * 3, context.sampleRate);
-loadSound("BatteryBenson.wav", myIRbuffer);
+loadSound("sounds/BatteryBenson.wav", myIRbuffer);
 var reverb = context.createConvolver();
 
 
